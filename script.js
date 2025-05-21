@@ -1,66 +1,79 @@
-const form = document.getElementById("task-form")
-const input = document.getElementById("task-input")
-const dateInput = document.getElementById("due-date")
-const list = document.getElementById("task-list")
-
-let tasks = JSON.parse(localStorage.getItem("tasks") || "[]")
-dateInput.valueAsDate = new Date()
-
-form.addEventListener("submit", e => {
-  e.preventDefault()
-  const task = {
-    id: Date.now(),
-    text: input.value.trim(),
-    due: dateInput.value,
-    done: false
-  }
-  if (task.text === "") return
-  tasks.push(task)
-  save()
-  render()
-  input.value = ""
-  input.focus()
-})
-
-function render() {
-  list.innerHTML = tasks.length ? "" : "<li class='list-group-item text-center'>Tidak ada tugas</li>"
-  tasks.forEach(t => {
-    const li = document.createElement("li")
-    li.className = "task-item list-group-item" + (t.done ? " completed" : "") + (isOverdue(t) ? " overdue" : "")
-    li.innerHTML = `
-      <div>
-        <div>${t.text}</div>
-        <small class="text-muted">Tenggat: ${format(t.due)}</small>
-      </div>
-      <div>
-        <button class="btn btn-sm btn-${t.done ? "warning" : "success"} me-1">${t.done ? "Batal" : "Selesai"}</button>
-        <button class="btn btn-sm btn-danger">Hapus</button>
-      </div>`
-    li.querySelector(".btn-success, .btn-warning").onclick = () => toggle(t.id)
-    li.querySelector(".btn-danger").onclick = () => remove(t.id)
-    list.appendChild(li)
-  })
-}
-function toggle(id) {
-  tasks = tasks.map(t => t.id === id ? { ...t, done: !t.done } : t)
-  save()
-  render()
-}
-function remove(id) {
-  if (confirm("Hapus tugas ini?")) {
-    tasks = tasks.filter(t => t.id !== id)
-    save()
-    render()
-  }
-}
-function isOverdue(t) {
-  return !t.done && new Date(t.due) < new Date()
-}
-function format(d) {
-  return new Date(d).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
-}
-function save() {
-  localStorage.setItem("tasks", JSON.stringify(tasks))
-}
-
-render()
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and contents
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            button.classList.add('active');
+            const tabId = button.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    // XOR encryption function
+    function xorEncrypt(text, key) {
+        if (!text || !key) return "";
+        
+        let result = "";
+        for (let i = 0; i < text.length; i++) {
+            // XOR the character code with the key character code at the corresponding position
+            const keyChar = key.charCodeAt(i % key.length);
+            const textChar = text.charCodeAt(i);
+            const encryptedChar = String.fromCharCode(textChar ^ keyChar);
+            
+            // Convert to hex representation for better display
+            result += encryptedChar.charCodeAt(0).toString(16).padStart(2, "0");
+        }
+        return result;
+    }
+    
+    // XOR decryption function (same as encryption due to XOR properties)
+    function xorDecrypt(hex, key) {
+        if (!hex || !key) return "";
+        
+        let result = "";
+        // Convert hex to characters
+        const hexPairs = hex.match(/.{1,2}/g) || [];
+        
+        for (let i = 0; i < hexPairs.length; i++) {
+            const charCode = parseInt(hexPairs[i], 16);
+            const keyChar = key.charCodeAt(i % key.length);
+            result += String.fromCharCode(charCode ^ keyChar);
+        }
+        return result;
+    }
+    
+    // Encrypt button click handler
+    document.getElementById('encrypt-btn').addEventListener('click', function() {
+        const plaintext = document.getElementById('plaintext').value;
+        const key = document.getElementById('encrypt-key').value;
+        
+        if (!plaintext || !key) {
+            alert('Silakan masukkan plaintext dan kunci');
+            return;
+        }
+        
+        const encrypted = xorEncrypt(plaintext, key);
+        document.getElementById('ciphertext').value = encrypted;
+    });
+    
+    // Decrypt button click handler
+    document.getElementById('decrypt-btn').addEventListener('click', function() {
+        const ciphertext = document.getElementById('decrypt-input').value;
+        const key = document.getElementById('decrypt-key').value;
+        
+        if (!ciphertext || !key) {
+            alert('Silakan masukkan ciphertext dan kunci');
+            return;
+        }
+        
+        const decrypted = xorDecrypt(ciphertext, key);
+        document.getElementById('decrypt-result').value = decrypted;
+    });
+});
